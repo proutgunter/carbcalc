@@ -478,7 +478,7 @@ Niveaux de confiance : élevée / moyenne / faible. Sois précis et conservateur
     mealPhotos.forEach(p => msgContent.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p.base64 } }));
     msgContent.push({ type: 'text', text: prompt });
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://carbcalc-api.proutgunter-a64.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: msgContent }] })
