@@ -484,6 +484,9 @@ Niveaux de confiance : élevée / moyenne / faible. Sois précis et conservateur
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: msgContent }] })
     });
     const data = await res.json();
+    console.log('API response:', JSON.stringify(data));
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    if (!data.content) throw new Error('Réponse inattendue: ' + JSON.stringify(data));
     const text = data.content.map(i => i.text || '').join('');
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
