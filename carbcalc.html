@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Carb Calc">
+<meta name="theme-color" content="#0d9488">
+<title>Carb Calc</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f5f5f5;color:#1a1a1a;}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;background:#fff;}
+
+.header{background:#fff;padding:12px 16px 8px;border-bottom:1px solid #e8e8e8;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+.header-logo{width:36px;height:36px;background:#0d9488;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.header-logo svg{width:20px;height:20px;fill:white;}
+.header-title{font-size:18px;font-weight:600;color:#0d9488;letter-spacing:-0.3px;}
+.header-title span{color:#f97316;}
+.header-sub{font-size:10px;color:#888;letter-spacing:0.4px;text-transform:uppercase;}
+.header-calib-dot{width:8px;height:8px;border-radius:50%;background:#ccc;margin-left:auto;flex-shrink:0;}
+.header-calib-dot.ok{background:#0d9488;}
+
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e8e8e8;position:sticky;top:61px;z-index:9;}
+.tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;color:#999;border:none;background:none;cursor:pointer;position:relative;transition:color 0.15s;}
+.tab.active{color:#0d9488;font-weight:600;}
+.tab.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:2px;background:#0d9488;border-radius:2px 2px 0 0;}
+.tab-icon{font-size:18px;display:block;margin-bottom:2px;}
+
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.panel{display:none;padding:16px;}
+.panel.active{display:block;}
+
+.card{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px;margin-bottom:12px;}
+.card-title{font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+
+.info-box{background:#e1f5ee;border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;}
+.info-box svg{width:18px;height:18px;fill:#0f6e56;flex-shrink:0;margin-top:1px;}
+.info-box p{font-size:13px;color:#0f6e56;line-height:1.5;}
+
+/* Upload avec choix caméra/galerie — pas de capture="" */
+.upload-btn{width:100%;padding:18px;border:2px dashed #c8e6e2;border-radius:16px;background:#f8fdfc;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;position:relative;margin-bottom:12px;}
+.upload-btn:active{background:#e1f5ee;}
+.upload-btn svg{width:30px;height:30px;fill:#0d9488;}
+.upload-btn p{font-size:15px;color:#0d9488;font-weight:500;}
+.upload-btn span{font-size:12px;color:#888;}
+.upload-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:16px;}
+
+/* Boutons séparés caméra / galerie */
+.source-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.source-btn{padding:16px 10px;border:1.5px solid #e0e0e0;border-radius:14px;background:#fff;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;position:relative;}
+.source-btn:active{background:#f5f5f5;}
+.source-btn svg{width:28px;height:28px;fill:#0d9488;}
+.source-btn p{font-size:14px;font-weight:500;color:#0d9488;}
+.source-btn span{font-size:11px;color:#888;}
+.source-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:16px;}
+
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.photo-slot{aspect-ratio:1;border-radius:12px;overflow:hidden;background:#f5f5f5;border:1px dashed #ddd;display:flex;align-items:center;justify-content:center;position:relative;}
+.photo-slot img{width:100%;height:100%;object-fit:cover;}
+.photo-slot svg{width:24px;height:24px;fill:#ccc;}
+.photo-remove{position:absolute;top:4px;right:4px;width:24px;height:24px;background:rgba(0,0,0,0.55);border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.photo-remove svg{width:13px;height:13px;fill:white;}
+
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:13px;color:#666;margin-bottom:6px;font-weight:500;}
+.field select,.field input[type=number]{width:100%;padding:12px 14px;border:1px solid #e0e0e0;border-radius:12px;font-size:16px;background:#fff;color:#1a1a1a;appearance:none;-webkit-appearance:none;}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;}
+
+.ratio-row{display:flex;align-items:center;gap:10px;}
+.ratio-row input{width:80px;text-align:center;padding:10px;border:1px solid #e0e0e0;border-radius:10px;font-size:18px;font-weight:600;color:#0d9488;}
+.ratio-row span{font-size:14px;color:#666;}
+
+.btn-primary{width:100%;padding:16px;background:#0d9488;color:white;border:none;border-radius:16px;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.15s;}
+.btn-primary:active{opacity:0.85;}
+.btn-primary:disabled{opacity:0.4;}
+.btn-secondary{width:100%;padding:14px;background:#f5f5f5;color:#444;border:none;border-radius:16px;font-size:16px;font-weight:500;cursor:pointer;margin-top:10px;}
+.btn-secondary:active{background:#ebebeb;}
+.btn-danger{width:100%;padding:13px;background:#fff;color:#e24b4a;border:1.5px solid #f7c1c1;border-radius:14px;font-size:15px;font-weight:500;cursor:pointer;margin-top:10px;}
+.btn-danger:active{background:#fcebeb;}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:99px;font-size:13px;margin-bottom:14px;}
+.badge-ok{background:#e1f5ee;color:#0f6e56;}
+.badge-warn{background:#f5f5f5;color:#888;border:1px solid #e0e0e0;}
+.badge svg{width:15px;height:15px;fill:currentColor;}
+
+.loading{display:none;flex-direction:column;align-items:center;padding:40px 20px;gap:16px;}
+.loading.active{display:flex;}
+.spinner{width:40px;height:40px;border:3px solid #e0e0e0;border-top-color:#0d9488;border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading p{font-size:15px;color:#666;}
+
+.food-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f0f0f0;}
+.food-row:last-child{border-bottom:none;}
+.food-emoji{font-size:22px;width:34px;text-align:center;flex-shrink:0;}
+.food-info{flex:1;min-width:0;}
+.food-name{font-size:15px;font-weight:500;color:#1a1a1a;}
+.food-portion{font-size:12px;color:#888;margin-top:1px;}
+.food-conf{font-size:10px;padding:2px 7px;border-radius:99px;margin-top:3px;display:inline-block;}
+.conf-high{background:#e1f5ee;color:#0f6e56;}
+.conf-med{background:#faeeda;color:#854f0b;}
+.conf-low{background:#fcebeb;color:#a32d2d;}
+.food-carbs-input{width:60px;text-align:right;font-size:16px;font-weight:600;color:#0d9488;border:1px solid #c8e6e2;border-radius:8px;padding:5px 8px;background:transparent;}
+
+.summary-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+.summary-box{background:#f8f8f8;border-radius:12px;padding:12px;}
+.summary-box .lbl{font-size:11px;color:#888;margin-bottom:4px;}
+.summary-box .val{font-size:26px;font-weight:600;color:#1a1a1a;}
+.summary-box .unit{font-size:12px;color:#888;}
+
+.bolus-box{background:#0d9488;border-radius:20px;padding:22px;text-align:center;color:white;margin:14px 0;}
+.bolus-box .lbl{font-size:13px;opacity:0.8;margin-bottom:4px;}
+.bolus-box .val{font-size:56px;font-weight:700;line-height:1;}
+.bolus-box .unit{font-size:17px;opacity:0.9;margin-top:2px;}
+.bolus-box .note{font-size:11px;opacity:0.65;margin-top:10px;line-height:1.5;}
+
+.disclaimer{font-size:11px;color:#aaa;text-align:center;padding:12px 8px;line-height:1.5;}
+.note-box{background:#f8f8f8;border-radius:12px;padding:12px 14px;font-size:13px;color:#555;line-height:1.5;margin-bottom:12px;}
+
+.calib-preview{display:none;position:relative;margin-bottom:12px;}
+.calib-preview img{width:100%;max-height:200px;object-fit:cover;border-radius:14px;}
+.calib-preview .remove{position:absolute;top:8px;right:8px;width:28px;height:28px;background:rgba(0,0,0,0.55);border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.calib-preview .remove svg{width:14px;height:14px;fill:white;}
+
+/* Calibration déjà faite — vue compacte */
+.calib-done{background:#f0faf8;border:1.5px solid #9fe1cb;border-radius:16px;padding:16px;margin-bottom:14px;display:none;}
+.calib-done .cd-top{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.calib-done .cd-icon{width:38px;height:38px;background:#0d9488;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.calib-done .cd-icon svg{width:20px;height:20px;fill:white;}
+.calib-done .cd-title{font-size:15px;font-weight:600;color:#0f6e56;}
+.calib-done .cd-sub{font-size:13px;color:#1d9e75;margin-top:1px;}
+.calib-done img{width:100%;max-height:120px;object-fit:cover;border-radius:10px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C9.5 2 7.5 4 7.5 6.5c0 .4.1.8.2 1.2C5.5 8.5 4 10.6 4 13c0 3.3 2.7 6 6 6h4c3.3 0 6-2.7 6-6 0-2.4-1.5-4.5-3.7-5.3.1-.4.2-.8.2-1.2C16.5 4 14.5 2 12 2z"/></svg>
+    </div>
+    <div>
+      <div class="header-title">Carb <span>Calc</span></div>
+      <div class="header-sub">Calculateur de glucide</div>
+    </div>
+    <div class="header-calib-dot" id="header-dot" title="Statut calibration"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" id="tab-calib" onclick="switchTab('calib')">
+      <span class="tab-icon">📐</span>Calibration
+    </button>
+    <button class="tab active" id="tab-analyse" onclick="switchTab('analyse')">
+      <span class="tab-icon">📷</span>Analyser
+    </button>
+    <button class="tab" id="tab-result" onclick="switchTab('result')">
+      <span class="tab-icon">💉</span>Résultats
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- CALIBRATION -->
+    <div class="panel" id="panel-calib">
+
+      <!-- Vue : calibration déjà faite -->
+      <div class="calib-done" id="calib-done-view">
+        <div class="cd-top">
+          <div class="cd-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg></div>
+          <div>
+            <div class="cd-title">Calibration enregistrée</div>
+            <div class="cd-sub" id="calib-done-label">—</div>
+          </div>
+        </div>
+        <img id="calib-done-img" src="" alt="Photo de calibration">
+        <button class="btn-danger" onclick="resetCalib()">Refaire la calibration</button>
+      </div>
+
+      <!-- Vue : pas encore calibré -->
+      <div id="calib-setup-view">
+        <div class="info-box">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <p>À faire une seule fois. Prenez une photo de votre main avec un objet de taille connue (carte bancaire, pièce). Cela permettra d'estimer les portions avec plus de précision.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Photo de calibration</div>
+          <div class="calib-preview" id="calib-preview">
+            <img id="calib-img" src="" alt="Calibration">
+            <button class="remove" onclick="clearCalib()">
+              <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+            </button>
+          </div>
+
+          <!-- Deux boutons : caméra ET galerie -->
+          <div class="source-btns">
+            <label class="source-btn">
+              <input type="file" accept="image/*" capture="environment" onchange="handleCalibUpload(this)">
+              <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+              <p>Caméra</p>
+              <span>Prendre une photo</span>
+            </label>
+            <label class="source-btn">
+              <input type="file" accept="image/*" onchange="handleCalibUpload(this)">
+              <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
+              <p>Galerie</p>
+              <span>Choisir une photo</span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Objet de référence</label>
+            <select id="ref-object" onchange="updateRefSize()">
+              <option value="85.6">Carte bancaire — 85,6 mm</option>
+              <option value="26">Pièce de 2€ — 26 mm</option>
+              <option value="24.25">Pièce de 50 cts — 24,25 mm</option>
+              <option value="custom">Autre taille…</option>
+            </select>
+          </div>
+          <div class="field" id="custom-size-field" style="display:none;">
+            <label>Largeur de l'objet (mm)</label>
+            <input type="number" id="ref-size" value="85" min="10" max="300" step="1">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="saveCalib()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+          Enregistrer la calibration
+        </button>
+      </div>
+    </div>
+
+    <!-- ANALYSE -->
+    <div class="panel active" id="panel-analyse">
+      <div id="calib-badge"></div>
+
+      <div class="card">
+        <div class="card-title">Photos du repas (1 à 3)</div>
+        <div class="photo-grid" id="photo-grid">
+          <div class="photo-slot"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+          <div class="photo-slot"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+          <div class="photo-slot"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></div>
+        </div>
+
+        <!-- Deux boutons : caméra ET galerie -->
+        <div class="source-btns" id="meal-source-btns">
+          <label class="source-btn">
+            <input type="file" accept="image/*" capture="environment" onchange="handleMealUpload(this)">
+            <svg viewBox="0 0 24 24"><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+            <p>Caméra</p>
+            <span>Prendre une photo</span>
+          </label>
+          <label class="source-btn">
+            <input type="file" accept="image/*" multiple onchange="handleMealUpload(this)">
+            <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H8l3-4zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
+            <p>Galerie</p>
+            <span>1 à 3 photos</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Votre ratio insuline / glucides</div>
+        <div class="ratio-row">
+          <span>1 unité pour</span>
+          <input type="number" id="ratio-ig" value="10" min="1" max="50" step="0.5">
+          <span>g de glucides</span>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="analyzePhotos()" id="analyze-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        Analyser le repas
+      </button>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p id="loading-msg">Analyse en cours…</p>
+      </div>
+    </div>
+
+    <!-- RESULTATS -->
+    <div class="panel" id="panel-result">
+      <div id="results-content">
+        <div style="text-align:center;padding:60px 20px;color:#bbb;">
+          <div style="font-size:48px;margin-bottom:12px;">🍽</div>
+          <p style="font-size:15px;">Analysez un repas pour voir les résultats ici.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let calibData = null;
+let mealPhotos = [];
+let lastRatio = 10;
+
+const loadingMsgs = [
+  'Identification des aliments…',
+  'Estimation des portions…',
+  'Calcul des glucides…',
+  'Préparation des résultats…'
+];
+
+// --- INIT : charger la calibration depuis localStorage ---
+function initApp() {
+  const saved = localStorage.getItem('carbcalc_calib');
+  if (saved) {
+    try {
+      const c = JSON.parse(saved);
+      calibData = c;
+      showCalibDone(c);
+    } catch(e) {}
+  }
+  renderCalibBadge();
+  updateHeaderDot();
+}
+
+function showCalibDone(c) {
+  document.getElementById('calib-done-view').style.display = 'block';
+  document.getElementById('calib-setup-view').style.display = 'none';
+  document.getElementById('calib-done-label').textContent = 'Référence : ' + c.refLabel;
+  if (c.imgSrc) document.getElementById('calib-done-img').src = c.imgSrc;
+}
+
+function showCalibSetup() {
+  document.getElementById('calib-done-view').style.display = 'none';
+  document.getElementById('calib-setup-view').style.display = 'block';
+}
+
+function resetCalib() {
+  if (!confirm('Refaire la calibration ? La photo actuelle sera supprimée.')) return;
+  calibData = null;
+  localStorage.removeItem('carbcalc_calib');
+  clearCalib();
+  showCalibSetup();
+  updateHeaderDot();
+  renderCalibBadge();
+}
+
+function updateHeaderDot() {
+  const dot = document.getElementById('header-dot');
+  dot.className = 'header-calib-dot' + (calibData ? ' ok' : '');
+  dot.title = calibData ? 'Calibration active' : 'Pas de calibration';
+}
+
+// --- CALIBRATION ---
+function updateRefSize() {
+  const val = document.getElementById('ref-object').value;
+  document.getElementById('custom-size-field').style.display = val === 'custom' ? 'block' : 'none';
+  if (val !== 'custom') document.getElementById('ref-size').value = val;
+}
+
+function handleCalibUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('calib-img').src = e.target.result;
+    document.getElementById('calib-preview').style.display = 'block';
+    calibData = { base64: e.target.result.split(',')[1], imgSrc: e.target.result };
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCalib() {
+  if (calibData && !calibData.refLabel) calibData = null;
+  document.getElementById('calib-preview').style.display = 'none';
+}
+
+function saveCalib() {
+  if (!calibData || !calibData.base64) { alert('Veuillez d\'abord prendre ou choisir une photo.'); return; }
+  const sel = document.getElementById('ref-object');
+  const refSize = sel.value === 'custom' ? document.getElementById('ref-size').value : sel.value;
+  const refLabel = sel.value === 'custom' ? refSize + ' mm' : sel.options[sel.selectedIndex].text;
+  calibData.refSize = refSize;
+  calibData.refLabel = refLabel;
+  localStorage.setItem('carbcalc_calib', JSON.stringify(calibData));
+  showCalibDone(calibData);
+  updateHeaderDot();
+  renderCalibBadge();
+  setTimeout(() => switchTab('analyse'), 300);
+}
+
+// --- ANALYSE ---
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'analyse') renderCalibBadge();
+}
+
+function renderCalibBadge() {
+  const badge = document.getElementById('calib-badge');
+  if (!badge) return;
+  if (calibData && calibData.refLabel) {
+    badge.innerHTML = '<div class="badge badge-ok"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> Calibration active — ' + calibData.refLabel + '</div>';
+  } else {
+    badge.innerHTML = '<div class="badge badge-warn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> Sans calibration — <span style="text-decoration:underline;cursor:pointer;" onclick="switchTab(\'calib\')">configurer</span></div>';
+  }
+}
+
+function handleMealUpload(input) {
+  const files = Array.from(input.files);
+  const remaining = 3 - mealPhotos.length;
+  files.slice(0, remaining).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      mealPhotos.push({ base64: e.target.result.split(',')[1], src: e.target.result });
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeMealPhoto(idx) {
+  mealPhotos.splice(idx, 1);
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photo-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'photo-slot';
+    if (mealPhotos[i]) {
+      const idx = i;
+      slot.innerHTML = '<img src="' + mealPhotos[i].src + '" alt="Repas ' + (i+1) + '"><button class="photo-remove" onclick="removeMealPhoto(' + idx + ')"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>';
+    } else {
+      slot.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
+    }
+    grid.appendChild(slot);
+  }
+  const sourceBtns = document.getElementById('meal-source-btns');
+  if (sourceBtns) sourceBtns.style.display = mealPhotos.length >= 3 ? 'none' : 'grid';
+}
+
+async function analyzePhotos() {
+  if (mealPhotos.length === 0) { alert('Ajoutez au moins une photo du repas.'); return; }
+  const ratio = parseFloat(document.getElementById('ratio-ig').value) || 10;
+  lastRatio = ratio;
+
+  const btn = document.getElementById('analyze-btn');
+  const loadingEl = document.getElementById('loading');
+  btn.disabled = true;
+  btn.style.display = 'none';
+  loadingEl.classList.add('active');
+
+  let msgIdx = 0;
+  const msgInt = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadingMsgs.length;
+    document.getElementById('loading-msg').textContent = loadingMsgs[msgIdx];
+  }, 2200);
+
+  let calibCtx = '';
+  if (calibData && calibData.refLabel) {
+    calibCtx = `Une photo de calibration est fournie (main + étalon de ${calibData.refSize}mm : ${calibData.refLabel}). Utilise cette référence pour estimer les portions avec précision.`;
+  }
+
+  const prompt = `Tu es un expert en nutrition clinique spécialisé dans l'aide aux personnes diabétiques de type 1.
+Analyse ${mealPhotos.length > 1 ? 'ces ' + mealPhotos.length + ' photos du même repas (angles différents)' : 'cette photo de repas'}.
+${calibCtx}
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après :
+{"aliments":[{"emoji":"🍞","nom":"Pain","portion":"2 tranches (70g)","glucides":30,"proteines":6,"lipides":2,"confiance":"élevée"}],"totalGlucides":85,"noteAnalyse":"Note courte sur la fiabilité.","conseils":"Conseil pratique si pertinent, sinon null"}
+Niveaux de confiance : élevée / moyenne / faible. Sois précis et conservateur.`;
+
+  try {
+    const msgContent = [];
+    if (calibData && calibData.base64) {
+      msgContent.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: calibData.base64 } });
+      msgContent.push({ type: 'text', text: 'Photo de calibration (main + étalon) :' });
+    }
+    mealPhotos.forEach(p => msgContent.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: p.base64 } }));
+    msgContent.push({ type: 'text', text: prompt });
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: msgContent }] })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    clearInterval(msgInt);
+    loadingEl.classList.remove('active');
+    btn.disabled = false;
+    btn.style.display = 'flex';
+    renderResults(parsed, ratio);
+    switchTab('result');
+  } catch(err) {
+    clearInterval(msgInt);
+    loadingEl.classList.remove('active');
+    btn.disabled = false;
+    btn.style.display = 'flex';
+    alert('Erreur lors de l\'analyse.\n' + err.message);
+  }
+}
+
+function renderResults(data, ratio) {
+  const confClass = { 'élevée': 'conf-high', 'moyenne': 'conf-med', 'faible': 'conf-low' };
+  const bolus = (data.totalGlucides / ratio).toFixed(1);
+
+  const foodRows = data.aliments.map((a, i) => `
+    <div class="food-row">
+      <span class="food-emoji">${a.emoji || '🍽'}</span>
+      <div class="food-info">
+        <div class="food-name">${a.nom}</div>
+        <div class="food-portion">${a.portion}</div>
+        <span class="food-conf ${confClass[a.confiance] || ''}">${a.confiance}</span>
+      </div>
+      <input class="food-carbs-input" type="number" value="${a.glucides}" min="0" max="300" step="1" onchange="recalcTotal()" aria-label="Glucides ${a.nom}">
+    </div>`).join('');
+
+  document.getElementById('results-content').innerHTML = `
+    <div class="card">
+      <div class="card-title">Aliments détectés</div>
+      ${foodRows}
+    </div>
+    ${data.noteAnalyse ? `<div class="note-box">📝 ${data.noteAnalyse}</div>` : ''}
+    <div class="summary-row">
+      <div class="summary-box">
+        <div class="lbl">Total glucides</div>
+        <div><span class="val" id="total-carbs">${data.totalGlucides}</span> <span class="unit">g</span></div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">Ratio I/G</div>
+        <div><span class="val">1</span> <span class="unit">u / ${ratio}g</span></div>
+      </div>
+    </div>
+    <div class="bolus-box">
+      <div class="lbl">Bolus suggéré</div>
+      <div class="val" id="bolus-val">${bolus}</div>
+      <div class="unit">unités d'insuline</div>
+      <div class="note">Ajustez selon votre glycémie actuelle et les conseils de votre diabétologue</div>
+    </div>
+    ${data.conseils ? `<div class="info-box"><svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:#0f6e56;flex-shrink:0;margin-top:1px;"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg><p>${data.conseils}</p></div>` : ''}
+    <p class="disclaimer">⚠ Estimation indicative uniquement. Consultez toujours votre équipe soignante avant d'ajuster votre traitement.</p>
+    <button class="btn-secondary" onclick="newAnalysis()">+ Nouvelle analyse</button>
+    <div style="height:24px;"></div>
+  `;
+}
+
+function recalcTotal() {
+  let total = 0;
+  document.querySelectorAll('.food-carbs-input').forEach(i => total += parseFloat(i.value) || 0);
+  const tc = document.getElementById('total-carbs');
+  const bv = document.getElementById('bolus-val');
+  if (tc) tc.textContent = Math.round(total);
+  if (bv) bv.textContent = (total / lastRatio).toFixed(1);
+}
+
+function newAnalysis() {
+  mealPhotos = [];
+  renderPhotoGrid();
+  switchTab('analyse');
+}
+
+initApp();
+</script>
+</body>
+</html>
