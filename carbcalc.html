@@ -187,9 +187,78 @@ html,body{height:100%;font-family:'DM Sans',-apple-system,BlinkMacSystemFont,san
 
 .note-box{background:rgba(255,255,255,0.55);backdrop-filter:blur(8px);border-radius:14px;padding:11px 14px;font-size:12px;color:var(--text);line-height:1.6;margin-bottom:10px;border:1px solid rgba(255,255,255,0.7);}
 .disclaimer{font-size:11px;color:var(--text-3);text-align:center;padding:10px 8px;line-height:1.5;}
+
+  /* PASSWORD SCREEN */
+  .pwd-screen{
+    position:fixed;inset:0;
+    background:var(--bg-grad);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    z-index:1000;padding:32px;
+  }
+  .pwd-card{
+    background:white;border-radius:28px;
+    padding:32px 28px;width:100%;max-width:340px;
+    box-shadow:0 8px 30px rgba(45,74,62,0.15);
+    text-align:center;
+  }
+  .pwd-logo{font-size:48px;margin-bottom:16px;}
+  .pwd-title{font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .pwd-title span{color:var(--coral);}
+  .pwd-sub{font-size:13px;color:var(--text-2);margin-bottom:28px;}
+  .pwd-input{
+    width:100%;padding:14px 16px;
+    border:2px solid rgba(168,213,194,0.5);
+    border-radius:16px;font-size:18px;
+    font-family:inherit;color:var(--text);
+    text-align:center;letter-spacing:4px;
+    margin-bottom:14px;outline:none;
+    transition:border-color 0.2s;
+  }
+  .pwd-input:focus{border-color:var(--teal);}
+  .pwd-input.error{border-color:var(--coral);animation:shake 0.3s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-8px);}
+    75%{transform:translateX(8px);}
+  }
+  .pwd-btn{
+    width:100%;padding:15px;
+    background:linear-gradient(135deg,var(--teal),var(--teal-d));
+    color:white;border:none;border-radius:16px;
+    font-size:16px;font-weight:700;cursor:pointer;
+    font-family:inherit;
+    box-shadow:0 4px 15px rgba(29,158,117,0.3);
+    transition:transform 0.15s;
+  }
+  .pwd-btn:active{transform:scale(0.97);}
+  .pwd-error{font-size:13px;color:var(--coral);margin-top:10px;min-height:18px;}
+  .pwd-hint{font-size:11px;color:var(--text-3);margin-top:16px;}
+
 </style>
 </head>
 <body>
+
+  <!-- PASSWORD SCREEN -->
+  <div class="pwd-screen" id="pwd-screen">
+    <div class="pwd-card">
+      <div class="pwd-logo">🌾</div>
+      <div class="pwd-title">CarbTrack <span>Pro</span></div>
+      <div class="pwd-sub">Accès sécurisé — entrez votre mot de passe</div>
+      <input 
+        class="pwd-input" 
+        id="pwd-input" 
+        type="password" 
+        placeholder="••••••••"
+        autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') checkPassword()"
+      >
+      <button class="pwd-btn" onclick="checkPassword()">Accéder à l'app</button>
+      <div class="pwd-error" id="pwd-error"></div>
+      <div class="pwd-hint">Application personnelle — accès restreint</div>
+    </div>
+  </div>
+
 <div class="app">
 
   <div class="hdr">
@@ -406,6 +475,41 @@ function getFoodImg(emoji, name) {
   if (n.includes('ramen') || n.includes('wok') || n.includes('nouilles')) return FOOD_IMGS.noodles;
   return null;
 }
+
+
+  // PASSWORD PROTECTION
+  const APP_PWD = 'VOTRE_MOT_DE_PASSE'; // à changer !
+
+  function checkPassword() {
+    const input = document.getElementById('pwd-input');
+    const error = document.getElementById('pwd-error');
+    const screen = document.getElementById('pwd-screen');
+    
+    if (input.value === APP_PWD) {
+      // Sauvegarder en session
+      sessionStorage.setItem('carbcalc_auth', btoa(APP_PWD));
+      screen.style.display = 'none';
+    } else {
+      input.classList.add('error');
+      error.textContent = 'Mot de passe incorrect';
+      input.value = '';
+      setTimeout(() => {
+        input.classList.remove('error');
+        error.textContent = '';
+      }, 1500);
+    }
+  }
+
+  function checkAuth() {
+    const stored = sessionStorage.getItem('carbcalc_auth');
+    const screen = document.getElementById('pwd-screen');
+    if (stored && atob(stored) === APP_PWD) {
+      screen.style.display = 'none';
+    } else {
+      screen.style.display = 'flex';
+      setTimeout(() => document.getElementById('pwd-input').focus(), 100);
+    }
+  }
 
 let calibData = null;
 let mealPhotos = [];
@@ -731,6 +835,7 @@ function newAnalysis() {
   switchTab('analyse');
 }
 
+checkAuth();
 initApp();
 </script>
 </body>
