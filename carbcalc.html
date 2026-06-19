@@ -627,7 +627,7 @@ async function analyzePhotos() {
 
     const res = await fetch('https://carbcalc-api.proutgunter-a64.workers.dev', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Token': 'cc-2024-proutgunter-x9k2m' },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: msgContent }] })
     });
     const data = await res.json();
